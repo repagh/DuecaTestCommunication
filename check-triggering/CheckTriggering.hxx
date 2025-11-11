@@ -41,6 +41,9 @@ private: // simulation data
   /// Number of mishaps
   unsigned nfault;
 
+  /// counter for switching
+  unsigned switchcounter;
+
 private:
   /// @group Regular trigger and receive
   /// Stream, regular at ticker rate
@@ -130,6 +133,12 @@ private:
   /// multiple entry trigger
   ActivityCallback do_sm;
 
+  /// Callback
+  Callback<_ThisModule_> cb8;
+
+  /// multiple entry trigger
+  ActivityCallback do_switchtrig;
+
 private: // activity allocation
   /** You might also need a clock. Don't mis-use this, because it is
       generally better to trigger on the incoming channels */
@@ -206,4 +215,7 @@ public: // the member functions that are called for activities
 
   /** Check triggering on channel with multiple entries. */
   void doCheck_sm(const TimeSpec &ts);
+
+  /** Check switching the trigger from channel to clock and back */
+  void doCheck_switchtrigger(const TimeSpec &ts);
 };

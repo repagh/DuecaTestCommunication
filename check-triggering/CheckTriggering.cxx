@@ -73,6 +73,7 @@ CheckTriggering::CheckTriggering(Entity *e, const char *part,
   // initialize the data you need in your simulation or process
   ts_1_1(),
   nfault(0),
+  switchcounter(200U),
 
   w_s1_1(getId(), NameSet(getEntity(), getclassname<TriggerD>(), "stream_1_1"),
          getclassname<TriggerD>(), "stream_1_1", Channel::Continuous),
@@ -134,6 +135,9 @@ CheckTriggering::CheckTriggering(Entity *e, const char *part,
   cb7(this, &_ThisModule_::doCheck_sm),
   do_sm(getId(), "stream, multiple entries", &cb7, ps),
 
+  cb8(this, &_ThisModule_::doCheck_switchtrigger),
+  do_switchtrig(getId(), "switch triggering", &cb8, ps),
+
   myclock()
 {
   // connect the triggers for simulation
@@ -146,6 +150,9 @@ CheckTriggering::CheckTriggering(Entity *e, const char *part,
   do_s1_1_pm.setTrigger(r_s1_1_pm);
   do_e1_1_pm.setTrigger(r_e1_1_pm);
   do_sm.setTrigger(r_sm);
+  do_switchtrig.setTrigger(myclock);
+  do_switchtrig.clearTriggers();
+  do_switchtrig.setTrigger(myclock);
 }
 
 bool CheckTriggering::complete()
@@ -234,6 +241,7 @@ void CheckTriggering::startModule(const TimeSpec &time)
   do_s1_1_pm.switchOn(time);
   do_e1_1_pm.switchOn(time);
   do_sm.switchOn(time);
+  do_switchtrig.switchOn(time);
 }
 
 // stop the module
@@ -248,6 +256,7 @@ void CheckTriggering::stopModule(const TimeSpec &time)
   do_s1_1_pm.switchOff(time);
   do_e1_1_pm.switchOff(time);
   do_sm.switchOff(time);
+  do_switchtrig.switchOff(time);
 }
 
 // this routine contains the main simulation process of your module. You
@@ -326,7 +335,7 @@ void CheckTriggering::doCheck_e1_1(const TimeSpec &ts)
   }
 
   // check the number of totally visible datasets
-  if (not (r_e1_1.getNumVisibleSets() == 1)) {
+  if (not(r_e1_1.getNumVisibleSets() == 1)) {
     W_MOD("doCheck_e1_1 expected 1 getNumVisibleSets()");
     nfault++;
   }
@@ -336,7 +345,7 @@ void CheckTriggering::doCheck_e1_1(const TimeSpec &ts)
     W_MOD("doCheck_e1_1 expected haveVisibleSets() with point ts");
     nfault++;
   }
-  if (not (r_e1_1.getNumVisibleSets(ts) == 1)) {
+  if (not(r_e1_1.getNumVisibleSets(ts) == 1)) {
     W_MOD("doCheck_e1_1 expected 1 getNumVisibleSets() with point ts");
     nfault++;
   }
@@ -346,7 +355,7 @@ void CheckTriggering::doCheck_e1_1(const TimeSpec &ts)
     W_MOD("doCheck_e1_1 expected haveVisibleSets() with range ts");
     nfault++;
   }
-  if (not (r_e1_1.getNumVisibleSets(tsrange) == 1)) {
+  if (not(r_e1_1.getNumVisibleSets(tsrange) == 1)) {
     W_MOD("doCheck_e1_1 expected 1 getNumVisibleSets() with range ts");
     nfault++;
   }
@@ -357,7 +366,7 @@ void CheckTriggering::doCheck_e1_1(const TimeSpec &ts)
     W_MOD("doCheck_e1_1 expected no haveVisibleSets() with previous range");
     nfault++;
   }
-  if (not (r_e1_1.getNumVisibleSets(tsrangeprev) == 0)) {
+  if (not(r_e1_1.getNumVisibleSets(tsrangeprev) == 0)) {
     W_MOD("doCheck_e1_1 expected 0 getNumVisibleSets() with previous range");
     nfault++;
   }
@@ -388,7 +397,7 @@ void CheckTriggering::doCheck_e1_1(const TimeSpec &ts)
     W_MOD("doCheck_e1_1 should no longer haveVisibleSets()");
     nfault++;
   }
-  if (not (r_e1_1.getNumVisibleSets(ts) == 0)) {
+  if (not(r_e1_1.getNumVisibleSets(ts) == 0)) {
     W_MOD("doCheck_e1_1 expected 0 getNumVisibleSets()");
     nfault++;
   }
@@ -396,7 +405,7 @@ void CheckTriggering::doCheck_e1_1(const TimeSpec &ts)
     W_MOD("doCheck_e1_1 should no longer haveVisibleSets() with point ts");
     nfault++;
   }
-  if (not (r_e1_1.getNumVisibleSets(ts) == 0)) {
+  if (not(r_e1_1.getNumVisibleSets(ts) == 0)) {
     W_MOD("doCheck_e1_1 expected 0 getNumVisibleSets() with point ts");
     nfault++;
   }
@@ -404,7 +413,7 @@ void CheckTriggering::doCheck_e1_1(const TimeSpec &ts)
     W_MOD("doCheck_e1_1 should no longer haveVisibleSets() with range ts");
     nfault++;
   }
-  if (not (r_e1_1.getNumVisibleSets(tsrange) == 0)) {
+  if (not(r_e1_1.getNumVisibleSets(tsrange) == 0)) {
     W_MOD("doCheck_e1_1 expected 0 getNumVisibleSets() with range ts");
     nfault++;
   }
@@ -563,6 +572,22 @@ void CheckTriggering::doCheck_sm(const TimeSpec &ts)
     W_MOD("doCheck_sm cannot read, at " << ts << " entryno=" << entryno << " : "
                                         << e.what());
     nfault++;
+  }
+}
+
+void CheckTriggering::doCheck_switchtrigger(const TimeSpec &ts)
+{
+  if (--switchcounter == 100U) {
+    do_switchtrig.clearTriggers();
+    do_switchtrig.setTrigger(w_s1_1);
+    //do_switchtrig.switchOn();
+    W_MOD("Triggering switch to channel");
+  }
+  if (switchcounter == 0U) {
+    do_switchtrig.clearTriggers();
+    do_switchtrig.setTrigger(myclock);
+    W_MOD("Triggering switch to clock");
+    switchcounter = 205U;
   }
 }
 
