@@ -1,11 +1,11 @@
 /* ------------------------------------------------------------------   */
-/*      item            : DistriTest.hxx
+/*      item            : CallPython.hxx
         made by         : repa
-        from template   : DusimeModuleTemplate.hxx (2026.04)
-        date            : Tue Jun 16 10:51:32 2026
+        from template   : DuecaModuleTemplate.hxx (2026.05)
+        date            : Fri Jul  3 15:24:43 2026
         category        : header file
         description     :
-        changes         : Tue Jun 16 10:51:32 2026 first version
+        changes         : Fri Jul  3 15:24:43 2026 first version
         language        : C++
         copyright       : (c)
 */
@@ -15,49 +15,50 @@
 // This includes headers for the objects that are sent over the channels
 #include "comm-objects.h"
 
-// include the dusime common classes header
-#include <dusime.h>
+// include the dueca common classes header
+#include <dueca/dueca.h>
 
 // include headers for functions/classes you need in the module
+#include <boost/python.hpp>
+namespace bpy = boost::python;
 
 
-/** A module.
+/** A test module, checking the collaboration between Python scripting and
+    C++ DUECA.
 
     The instructions to create an module of this class from the start
     script are:
 
-    \verbinclude distri-test.scm
-*/
-class DistriTest: public dueca::SimulationModule
+    \verbinclude call-python.scm
+ */
+class CallPython: public dueca::Module
 {
   /** self-define the module type, to ease writing the parameter table */
-  typedef DistriTest _ThisModule_;
+  typedef CallPython _ThisModule_;
 
 private: // simulation data
-  // declare the data you need in your simulation
-  bool even;
+  /// Flag to remember python set-up
+  bool python_linked;
 
-private: // trim calculation data
-  // declare the trim calculation data needed for your simulation
+  /// Python identy
+  bpy::object helper;
 
-private: // snapshot data
-  // declare, if you need, the room for placing snapshot data
+public:
+  /// Python dict with the current variable settings
+  /// The dict is created in the ModuleCreation call; that is after the
+  /// dueca_mod.py script has been read and processed.
+  /// If correct, gil is held.
+  bpy::dict confirmed_settings;
 
 private: // channel access
-  // declare access tokens for all the channels you read and write
-  // examples:
-  // dueca::ChannelReadToken    r_mytoken;
-  dueca::ChannelWriteToken   w_pax1;
-  dueca::ChannelWriteToken   w_pax2;
-  dueca::ChannelWriteToken   w_score;
 
 private: // activity allocation
   /** You might also need a clock. Don't mis-use this, because it is
       generally better to trigger on the incoming channels */
-  dueca::PeriodicAlarm         myclock;
+  dueca::PeriodicAlarm        myclock;
 
   /** Callback object for simulation calculation. */
-  dueca::Callback<DistriTest>  cb1;
+  dueca::Callback<CallPython>  cb1;
 
   /** Activity for simulation calculation. */
   dueca::ActivityCallback      do_calc;
@@ -66,15 +67,12 @@ public: // class name and trim/parameter tables
   /** Name of the module. */
   static const char* const           classname;
 
-  /** Return the initial condition table. */
-  static const dueca::IncoTable*            getMyIncoTable();
-
   /** Return the parameter table. */
   static const dueca::ParameterTable*       getMyParameterTable();
 
 public: // construction and further specification
-  /** Constructor. Is normally called from the creation script. */
-  DistriTest(dueca::Entity* e, const char* part, const dueca::PrioritySpec& ts);
+  /** Constructor. Is normally called from scheme/the creation script. */
+  CallPython(dueca::Entity* e, const char* part, const dueca::PrioritySpec& ts);
 
   /** Continued construction. This is called after all script
       parameters have been read and filled in, according to the
@@ -86,7 +84,7 @@ public: // construction and further specification
   bool complete();
 
   /** Destructor. */
-  ~DistriTest();
+  ~CallPython();
 
   // add here the member functions you want to be called with further
   // parameters. These are then also added in the parameter table
@@ -112,21 +110,4 @@ public: // member functions for cooperation with DUECA
 public: // the member functions that are called for activities
   /** the method that implements the main calculation. */
   void doCalculation(const dueca::TimeSpec& ts);
-
-public: // member functions for cooperation with DUSIME
-  /** For the Snapshot capability, fill the snapshot "snap" with the
-      data saved at a point in your simulation (if from_trim is false)
-      or with the state data calculated in the trim calculation (if
-      from_trim is true). */
-  void fillSnapshot(const dueca::TimeSpec& ts,
-                    dueca::Snapshot& snap, bool from_trim);
-
-  /** Restoring the state of the simulation from a snapshot. */
-  void loadSnapshot(const dueca::TimeSpec& t, const dueca::Snapshot& snap);
-
-  /** Perform a trim calculation. Should NOT use current state
-      uses event channels parallel to the stream data channels,
-      calculates, based on the event channel input, the steady state
-      output. */
-  void trimCalculation(const dueca::TimeSpec& ts, const dueca::TrimMode& mode);
 };

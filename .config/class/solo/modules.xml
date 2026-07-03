@@ -24,5 +24,6 @@
     <module>ws-write-read</module>
     <module>inter-monitor</module>
     <module>distritest</module>
+    <module>call-python</module>
   </project>
 </machine>

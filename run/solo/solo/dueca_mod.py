@@ -52,6 +52,9 @@ display_timing = dueca.TimeSpec(0, 200)
 # log a bit more economical, 25 Hz
 log_timing = dueca.TimeSpec(0, 400)
 
+# Inserts the code later used by the CallPython module
+from callpython import CallHelper
+
 # ---------------------------------------------------------------------
 # the modules needed for dueca itself
 if this_node_id == ecs_node:
@@ -136,6 +139,15 @@ if this_node_id == ecs_node:
             "write-assorted", "", sim_priority).param(
                 set_timing=sim_timing,
                 check_timing=(10000, 20000)
+        )
+    )
+    # Python-using module, challenges:
+    # - Python objects in constructor (GIL lock needs to work)
+    # - Python calls in other thread (GIL lock needs to work)
+    mymods.append(
+        dueca.Module(
+            "call-python", "", admin_priority).param(
+                set_timing=sim_timing
         )
     )
 

@@ -10,6 +10,7 @@ DATADIR=$(realpath ../../run-data)
 
 # python helper script
 ln -sf $DATADIR/which_dueca_gtk.py .
+ln -sf ../../../call-python/callpython.py .
 
 # create a folder for run log history
 if [ ! -d runlogs ]; then

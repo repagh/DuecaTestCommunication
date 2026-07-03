@@ -97,7 +97,7 @@ DistriTest::DistriTest(Entity *e, const char *part, const PrioritySpec &ps) :
   // initialize the data you need in your simulation
 
   // initialize the data you need for the trim calculation
-
+  even(true),
   // initialize the channel access tokens, check the documentation for the
   // various parameters. Some examples:
   // r_mytoken(getId(), NameSet(getEntity(), getclassname<MyData>(), part),
@@ -112,8 +112,8 @@ DistriTest::DistriTest(Entity *e, const char *part, const PrioritySpec &ps) :
          getclassname<PaxAmount>(), "second", Channel::Events,
          Channel::OneOrMoreEntries),
   w_score(getId(), NameSet(getEntity(), getclassname<Scores>(), part),
-         getclassname<Scores>(), "only", Channel::Events,
-         Channel::OneOrMoreEntries),
+          getclassname<Scores>(), "only", Channel::Continuous,
+          Channel::OneOrMoreEntries),
 
   // activity initialization
   myclock(),
@@ -127,7 +127,7 @@ DistriTest::DistriTest(Entity *e, const char *part, const PrioritySpec &ps) :
 
   // connect the triggers for trim calculation. Leave this out if you
   // don not need input for trim calculation
-  //trimCalculationCondition(/* fill in your trim triggering channels */);
+  // trimCalculationCondition(/* fill in your trim triggering channels */);
 }
 
 bool DistriTest::complete()
@@ -275,13 +275,17 @@ void DistriTest::doCalculation(const TimeSpec &ts)
     throw CannotHandleState(getId(), GlobalId(), "state unhandled");
   }
 
+  if (even) {
     DataWriter<PaxAmount> wp1(w_pax1, ts);
     wp1.data().pax = 1;
+  }
+  else {
     DataWriter<PaxAmount> wp2(w_pax2, ts);
     wp2.data().pax = 2;
-    DataWriter<Scores> ws(w_score, ts);
-    ws.data().score = 1;
-
+  }
+  even = !even;
+  DataWriter<Scores> ws(w_score, ts);
+  ws.data().score = 1;
 
   if (snapshotNow()) {
     // keep a copy of the model state. Snapshot sending is done in the
