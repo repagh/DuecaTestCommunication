@@ -118,7 +118,8 @@ if this_node_id == ecs_node:
     mymods.append(dueca.Module(
         'channel-replicator-peer', "", comm_prio).param(
             master_information_channel="ReplicatorPeerAcknowledge://central",
-            config_url="ws://localhost:8765/config"
+            config_url="ws://localhost:8765/config",
+            #timing_gain=0.002
             )
         )
     filer = dueca.ReplayFiler(entity_name)
